@@ -13,12 +13,12 @@ import (
 
 // TODO: improve lint messages
 const (
-	randSourceLintMessage     = "use the crypto/rand.Reader instead for a cryptographically secure random number generator"
-	numberOfbitsLintMessage   = "always use 2048 bits or greater"
-	numberOfPrimesLintMessage = "the reccomended number of primes for %v bits is %v"
+	randSourceLintMessage     = "use the crypto/rand.Reader for a cryptographically secure random number generator"
+	numberOfbitsLintMessage   = "use 2048 bits or greater "
+	numberOfPrimesLintMessage = "for %v bits %v is the max number of primes to use"
 	hashLintSigningMessage    = "use SHA 256/512 for hash when signing"
 	hashLintEncDecMessage     = "use SHA 256/512 for hash when decrypting or encrypting"
-	keySizeLintcMessage       = "use a session key size of 16 bytes or greater"
+	keySizeLintcMessage       = "use a session key of 16 bytes or greater"
 	signingLintMessage        = "use rsa.SignPSS instead of rsa.SignPKCS1v15"
 	encryptingLintMessage     = "use rsa.EncryptOAEP instead of rsa.EncryptPKCS1v15"
 	blidingLintMessage        = "do not use nil for entropy source to perform blinding to avoid timing side-channel attacks"
@@ -74,12 +74,28 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 		// check if the second argument is greater than or equal to 2048 bits
 		checkSecureNumberOfPrimesForBits = func(e1, e2 ast.Expr) {
-			nprimes := pass.TypesInfo.Types[e1].Value.String()
-			bits := pass.TypesInfo.Types[e2].Value.String()
-			if recMaxNum, ok := recommendedMaxNumberOfPrimesForBitsTable[bits]; ok {
-				if recMaxNum != nprimes {
+			nprimes, err := strconv.Atoi(pass.TypesInfo.Types[e1].Value.String())
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			bits, err := strconv.Atoi(pass.TypesInfo.Types[e2].Value.String())
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Printf("%v\n", recommendedMaxNumberOfPrimesForBitsTable)
+
+			fmt.Printf("%s\n", recommendedMaxNumberOfPrimesForBitsTable[bits])
+			recMaxNum, ok := recommendedMaxNumberOfPrimesForBitsTable[bits]
+			if ok {
+				if nprimes > recMaxNum {
 					pass.Reportf(e1.Pos(), numberOfPrimesLintMessage, bits, recMaxNum)
 				}
+				return
+			} else {
+				fmt.Println("not ok")
 			}
 		}
 
@@ -195,9 +211,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 // http://www.cacr.math.uwaterloo.ca/techreports/2006/cacr2006-16.pdf
 // num-bits -> rec-num-of-primes
-var recommendedMaxNumberOfPrimesForBitsTable = map[string]string{
-	"1024": "3",
-	"2048": "3",
-	"4096": "4",
-	"8192": "5",
+var recommendedMaxNumberOfPrimesForBitsTable = map[int]int{
+	1024: 3,
+	2048: 3,
+	4096: 4,
+	8192: 5,
 }
