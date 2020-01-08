@@ -193,6 +193,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 			// if decrypting a PKCS1 v 1.5 session key
 			if isOfSelectorExprType("rsa.DecryptPKCS1v15SessionKey", se) {
+				checkSecureEntropySource(ce.Args[0])
 				checkBlindKeyOp(ce.Args[0])
 				checkPKCS1v15SessionKeySize(ce.Args[3])
 				return
