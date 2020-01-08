@@ -31,11 +31,15 @@ func main() {
 
 `rsalint` can identify a number of potential security problems:
 
-* An insecure source of entropy using `math/rand` ( always use `crypto/rand` ).
+* Using an insecure source of entropy using `math/rand` ( always use `crypto/rand` ).
 * Using an insecure hash function ( not SHA256 or SHA215 ).
-* Generating an RSA keypair using an insecure number of bits ( always use `>= 2048` ).
+* Generating an RSA key pair using an insecure number of bits ( always use `>= 2048` ).
 * Using potentially insecure signing function [`rsa.SignPKCS1v15`](https://golang.org/pkg/crypto/rsa/#SignPKCS1v15) instead of [`rsa.SignPSS`](https://golang.org/pkg/crypto/rsa/#SignPSS).
-* TODO: document other stuff...
+* Using potentially insecure signing function [`rsa.EncryptPKCS1v15`](https://golang.org/pkg/crypto/rsa/#EncryptPKCS1v15) instead of [`rsa.EncryptOAEP`](https://golang.org/pkg/crypto/rsa/#EncryptOAEP).
+* Using an insecure value for multi-prime keys for various bit sizes.
+* Using an insecure PKCS1v15 session key size.
+* Not using RSA blinding leading to possible timing side-channel attacks.
+
 
 ## Usage
 
