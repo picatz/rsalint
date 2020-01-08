@@ -38,105 +38,107 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.CallExpr)(nil),
 	}
 
-	var isOfSelectorExprType = func(typeStr string, e ast.Expr) bool {
-		se, ok := e.(*ast.SelectorExpr)
-		if ok {
-			return fmt.Sprintf("%v.%v", se.X, se.Sel) == typeStr
-		}
-		return false
-	}
-
-	// check if the first argument isn't crypto.Rand
-	var checkSecureEntropySource = func(e ast.Expr) {
-		if !isOfSelectorExprType("rand.Reader", e) {
-			pass.Reportf(e.Pos(), randSourceLintMessage)
-		}
-	}
-
-	// check if the entropy argument isn't nil to use
-	// blinding to avoid timing side-channel attacks.
-	var checkBlindKeyOp = func(e ast.Expr) {
-		if pass.TypesInfo.TypeOf(e).String() == "untyped nil" {
-			pass.Reportf(e.Pos(), blidingLintMessage)
-		}
-	}
-
-	// check if the second argument is greater than or equal to 2048 bits
-	var checkSecureNumberOfBits = func(e ast.Expr) {
-		bits, err := strconv.Atoi(pass.TypesInfo.Types[e].Value.String())
-		if err == nil {
-			if bits < 2048 {
-				pass.Reportf(e.Pos(), numberOfbitsLintMessage)
-			}
-		}
-	}
-
-	// check if the second argument is greater than or equal to 2048 bits
-	var checkSecureNumberOfPrimesForBits = func(e1, e2 ast.Expr) {
-		nprimes := pass.TypesInfo.Types[e1].Value.String()
-		bits := pass.TypesInfo.Types[e2].Value.String()
-		if recNum, ok := recommendedNumberOfPrimesForBitsTable[bits]; ok {
-			if recNum != nprimes {
-				pass.Reportf(e1.Pos(), numberOfPrimesLintMessage, bits, recNum)
-			}
-		}
-	}
-
-	// check if SHA 256 or 512 is being used
-	var checkSecureHashAlgo = func(e ast.Expr) {
-		// check if the third argument is using SHA256 ( crypto.Hash value 5 ).
-		hashValue := fmt.Sprintf("%v", pass.TypesInfo.Types[e].Value)
-		if hashValue != "7" && hashValue != "5" {
-			pass.Reportf(e.Pos(), hashLintSigningMessage)
-		}
-	}
-
-	// check if "crypto/sha256" or "crypto/sha512" is being used
-	var checkSecureHashFunc = func(e ast.Expr) {
-		ce, ok := e.(*ast.CallExpr)
-		if ok {
-			se, ok := ce.Fun.(*ast.SelectorExpr)
+	var (
+		isOfSelectorExprType = func(typeStr string, e ast.Expr) bool {
+			se, ok := e.(*ast.SelectorExpr)
 			if ok {
-				if !isOfSelectorExprType("sha256.New", se) && !isOfSelectorExprType("sha512.New", se) {
-					pass.Reportf(ce.Pos(), hashLintEncDecMessage)
-				}
+				return fmt.Sprintf("%v.%v", se.X, se.Sel) == typeStr
 			}
+			return false
 		}
-	}
 
-	// check the session key size for PKCS#1 v1.5
-	var checkPKCS1v15SessionKeySize = func(e ast.Expr) {
-		if pass.TypesInfo.TypeOf(e).String() == "untyped nil" {
-			pass.Reportf(e.Pos(), keySizeLintcMessage)
-		} else if pass.TypesInfo.TypeOf(e).String() == "[]byte" {
-			switch t := e.(type) {
-			case *ast.CallExpr:
-				// using []byte("style call")
-				if pass.TypesInfo.TypeOf(t.Fun).String() == "[]byte" {
-					s, err := strconv.Unquote(pass.TypesInfo.Types[t.Args[0]].Value.String())
-					if err == nil {
-						if len(s) < 16 {
-							pass.Reportf(t.Pos(), keySizeLintcMessage)
-						}
-					}
-				} else if pass.TypesInfo.TypeOf(t.Fun).String() == "func() []byte" {
-					// TODO: add more robust check for bytes.Buffer style calls
-					// to generate key sizes. Need to check if less than 16 bytes
-					// like the []byte("style call") which can inspect the given string
-					// ex, ok := t.Fun.(*ast.SelectorExpr)
-					// if ok {
-					// 	pass.Reportf(t.Pos(), "DEBUG: %v", ex)
-					// }
-				}
-			case *ast.CompositeLit:
-				if t.Elts == nil || len(t.Elts) < 16 {
-					pass.Reportf(t.Pos(), keySizeLintcMessage)
-				}
-			default:
-				pass.Reportf(e.Pos(), "TRACE: %v", pass.TypesInfo.TypeOf(t))
+		// check if the entropy argument isn't nil to use
+		// blinding to avoid timing side-channel attacks.
+		checkBlindKeyOp = func(e ast.Expr) {
+			if pass.TypesInfo.TypeOf(e).String() == "untyped nil" {
+				pass.Reportf(e.Pos(), blidingLintMessage)
 			}
 		}
-	}
+
+		// check if the first argument isn't crypto.Rand
+		checkSecureEntropySource = func(e ast.Expr) {
+			if !isOfSelectorExprType("rand.Reader", e) {
+				pass.Reportf(e.Pos(), randSourceLintMessage)
+			}
+		}
+
+		// check if the second argument is greater than or equal to 2048 bits
+		checkSecureNumberOfBits = func(e ast.Expr) {
+			bits, err := strconv.Atoi(pass.TypesInfo.Types[e].Value.String())
+			if err == nil {
+				if bits < 2048 {
+					pass.Reportf(e.Pos(), numberOfbitsLintMessage)
+				}
+			}
+		}
+
+		// check if the second argument is greater than or equal to 2048 bits
+		checkSecureNumberOfPrimesForBits = func(e1, e2 ast.Expr) {
+			nprimes := pass.TypesInfo.Types[e1].Value.String()
+			bits := pass.TypesInfo.Types[e2].Value.String()
+			if recMaxNum, ok := recommendedMaxNumberOfPrimesForBitsTable[bits]; ok {
+				if recMaxNum != nprimes {
+					pass.Reportf(e1.Pos(), numberOfPrimesLintMessage, bits, recMaxNum)
+				}
+			}
+		}
+
+		// check if SHA 256 or 512 is being used
+		checkSecureHashAlgo = func(e ast.Expr) {
+			// check if the third argument is using SHA256 ( crypto.Hash value 5 ).
+			hashValue := fmt.Sprintf("%v", pass.TypesInfo.Types[e].Value)
+			if hashValue != "7" && hashValue != "5" {
+				pass.Reportf(e.Pos(), hashLintSigningMessage)
+			}
+		}
+
+		// check if "crypto/sha256" or "crypto/sha512" is being used
+		checkSecureHashFunc = func(e ast.Expr) {
+			ce, ok := e.(*ast.CallExpr)
+			if ok {
+				se, ok := ce.Fun.(*ast.SelectorExpr)
+				if ok {
+					if !isOfSelectorExprType("sha256.New", se) && !isOfSelectorExprType("sha512.New", se) {
+						pass.Reportf(ce.Pos(), hashLintEncDecMessage)
+					}
+				}
+			}
+		}
+
+		// check the session key size for PKCS#1 v1.5
+		checkPKCS1v15SessionKeySize = func(e ast.Expr) {
+			if pass.TypesInfo.TypeOf(e).String() == "untyped nil" {
+				pass.Reportf(e.Pos(), keySizeLintcMessage)
+			} else if pass.TypesInfo.TypeOf(e).String() == "[]byte" {
+				switch t := e.(type) {
+				case *ast.CallExpr:
+					// using []byte("style call")
+					if pass.TypesInfo.TypeOf(t.Fun).String() == "[]byte" {
+						s, err := strconv.Unquote(pass.TypesInfo.Types[t.Args[0]].Value.String())
+						if err == nil {
+							if len(s) < 16 {
+								pass.Reportf(t.Pos(), keySizeLintcMessage)
+							}
+						}
+					} else if pass.TypesInfo.TypeOf(t.Fun).String() == "func() []byte" {
+						// TODO: add more robust check for bytes.Buffer style calls
+						// to generate key sizes. Need to check if less than 16 bytes
+						// like the []byte("style call") which can inspect the given string
+						// ex, ok := t.Fun.(*ast.SelectorExpr)
+						// if ok {
+						// 	pass.Reportf(t.Pos(), "DEBUG: %v", ex)
+						// }
+					}
+				case *ast.CompositeLit:
+					if t.Elts == nil || len(t.Elts) < 16 {
+						pass.Reportf(t.Pos(), keySizeLintcMessage)
+					}
+				default:
+					pass.Reportf(e.Pos(), "TRACE: %v", pass.TypesInfo.TypeOf(t))
+				}
+			}
+		}
+	)
 
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
 		ce := n.(*ast.CallExpr)
@@ -193,7 +195,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 // http://www.cacr.math.uwaterloo.ca/techreports/2006/cacr2006-16.pdf
 // num-bits -> rec-num-of-primes
-var recommendedNumberOfPrimesForBitsTable = map[string]string{
+var recommendedMaxNumberOfPrimesForBitsTable = map[string]string{
 	"1024": "3",
 	"2048": "3",
 	"4096": "4",
