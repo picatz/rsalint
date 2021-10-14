@@ -136,7 +136,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 								pass.Reportf(t.Pos(), keySizeLintcMessage)
 							}
 						}
-					} else if pass.TypesInfo.TypeOf(t.Fun).String() == "func() []byte" {
+						// } else if pass.TypesInfo.TypeOf(t.Fun).String() == "func() []byte" {
 						// TODO: add more robust check for bytes.Buffer style calls
 						// to generate key sizes. Need to check if less than 16 bytes
 						// like the []byte("style call") which can inspect the given string
