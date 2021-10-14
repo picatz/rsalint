@@ -2,9 +2,9 @@ package rsacheck
 
 import "testing"
 
-func TestNewAnalyzer(t *testing.T) {
+func TestAnalyzer(t *testing.T) {
 	if Analyzer.Name != "rsalint" {
-		t.Fatalf("Unexpected analyzer name found, exp: %q, got: %q", "underbyte", Analyzer.Name)
+		t.Fatalf("Unexpected analyzer name found, exp: %q, got: %q", "rsalint", Analyzer.Name)
 	}
 
 	if Analyzer.Doc == "" {
