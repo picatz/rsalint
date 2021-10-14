@@ -85,9 +85,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				fmt.Println(err)
 				return
 			}
-			fmt.Printf("%v\n", recommendedMaxNumberOfPrimesForBitsTable)
+			// fmt.Printf("%v\n", recommendedMaxNumberOfPrimesForBitsTable)
 
-			fmt.Printf("%s\n", recommendedMaxNumberOfPrimesForBitsTable[bits])
+			// fmt.Printf("%d\n", recommendedMaxNumberOfPrimesForBitsTable[bits])
 			recMaxNum, ok := recommendedMaxNumberOfPrimesForBitsTable[bits]
 			if ok {
 				if nprimes > recMaxNum {
@@ -136,7 +136,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 								pass.Reportf(t.Pos(), keySizeLintcMessage)
 							}
 						}
-					} else if pass.TypesInfo.TypeOf(t.Fun).String() == "func() []byte" {
+						// } else if pass.TypesInfo.TypeOf(t.Fun).String() == "func() []byte" {
 						// TODO: add more robust check for bytes.Buffer style calls
 						// to generate key sizes. Need to check if less than 16 bytes
 						// like the []byte("style call") which can inspect the given string
