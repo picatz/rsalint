@@ -19,3 +19,7 @@ func TestAnalyzer(t *testing.T) {
 func TestVulnerable(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "vulnerable")
 }
+
+func TestNotVulnerable(t *testing.T) {
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "not-vulnerable")
+}
