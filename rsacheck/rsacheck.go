@@ -87,7 +87,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			}
 			fmt.Printf("%v\n", recommendedMaxNumberOfPrimesForBitsTable)
 
-			fmt.Printf("%s\n", recommendedMaxNumberOfPrimesForBitsTable[bits])
+			fmt.Printf("%d\n", recommendedMaxNumberOfPrimesForBitsTable[bits])
 			recMaxNum, ok := recommendedMaxNumberOfPrimesForBitsTable[bits]
 			if ok {
 				if nprimes > recMaxNum {
