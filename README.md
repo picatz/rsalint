@@ -1,12 +1,11 @@
 # rsalint
 
- 🕵️‍♀️Golang [linter](https://en.wikipedia.org/wiki/Lint_(software)) for the [`crypto/rsa`](https://golang.org/pkg/crypto/rsa/) package.
+ 🕵️‍♀️ Linter for the [`crypto/rsa`](https://golang.org/pkg/crypto/rsa/) package.
 
 ## Install
 
 ```console
-$ go get -u -v github.com/picatz/rsalint/cmd/...
-...
+$ go install github.com/picatz/rsalint/cmd/rsalint@latest
 ```
 
 ## Vulnerable Implementation
