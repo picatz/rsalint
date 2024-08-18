@@ -41,5 +41,5 @@ func main() {
 ```console
 $ rsalint ./path/to/vulnerable/code/...
 ./path/to/vulnerable/code/main.go:10:37: use the crypto/rand.Reader instead for a cryptographically secure random number generator
-./path/to/vulnerable/code/main.go:10:66: always use 2048 bits or greater
+./path/to/vulnerable/code/main.go:10:66: use 2048 bits or greater
 ```
